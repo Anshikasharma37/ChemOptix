@@ -257,7 +257,11 @@ with tab1:
                     st.error("❌ Cannot reach FastAPI. Is it running?")
                     st.stop()
                 except requests.exceptions.HTTPError:
-                    st.error(f"❌ API Error: {res.json().get('detail', 'Unknown error')}")
+                    try:
+                        detail = res.json().get('detail', 'Unknown error')
+                    except Exception:
+                        detail = res.text[:300] if res.text else f"HTTP {res.status_code}"
+                    st.error(f"❌ API Error: {detail}")
                     st.stop()
                 except Exception as e:
                     st.error(f"❌ {str(e)}")
@@ -450,7 +454,11 @@ with tab2:
                     st.error("❌ Cannot reach FastAPI. Is it running?")
                     st.stop()
                 except requests.exceptions.HTTPError:
-                    st.error(f"❌ API Error: {res.json().get('detail', 'Unknown error')}")
+                    try:
+                        detail = res.json().get('detail', 'Unknown error')
+                    except Exception:
+                        detail = res.text[:300] if res.text else f"HTTP {res.status_code}"
+                    st.error(f"❌ API Error: {detail}")
                     st.stop()
                 except Exception as e:
                     st.error(f"❌ {str(e)}")

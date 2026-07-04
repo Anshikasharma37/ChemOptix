@@ -130,9 +130,20 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
 
     except json.JSONDecodeError:
         return _rule_based_fallback(inputs, predictions)
-    except Exception as e:
+    except http_requests.exceptions.HTTPError as e:
+        status = e.response.status_code if e.response else "unknown"
         return GeminiSuggestion(
-            summary=f"Gemini error: {str(e)}",
-            suggestions=["Check API key and try again."],
+            summary=f"Gemini HTTP error {status} — check API key in Render environment variables.",
+            suggestions=["Ensure GEMINI_API_KEY is a valid Google AI Studio key starting with AIzaSy..."],
+            risk_level="medium",
+        )
+    except Exception as e:
+        error_msg = str(e)
+        # Never expose the API key in error messages
+        if GEMINI_API_KEY and GEMINI_API_KEY in error_msg:
+            error_msg = error_msg.replace(GEMINI_API_KEY, "***")
+        return GeminiSuggestion(
+            summary=f"Gemini error: {error_msg}",
+            suggestions=["Check Render logs for details."],
             risk_level="medium",
         )

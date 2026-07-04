@@ -1,7 +1,12 @@
+"""
+ChemOptix — Gemini Optimization Route
+Calls Gemini 1.5 Flash directly via REST API (no SDK version issues).
+POST /api/optimize — returns structured suggestions for turbine parameters.
+"""
 
 import os
 import json
-import google.generativeai as genai
+import requests as http_requests
 from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv
 
@@ -11,10 +16,11 @@ load_dotenv()
 
 router = APIRouter(prefix="/api", tags=["Optimization"])
 
-# Configure Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_URL = (
+    "https://generativelanguage.googleapis.com/v1/models/"
+    "gemini-1.5-flash:generateContent?key={key}"
+)
 
 
 def _build_prompt(inputs: ProcessInput, predictions: PredictionResult) -> str:
@@ -43,68 +49,90 @@ Typical benchmarks for this turbine class:
 Analyze these results and provide optimization recommendations.
 Respond ONLY with valid JSON in this exact format:
 {{
-  "summary": "One-sentence summary of the turbine's current status",
+  "summary": "One-sentence summary of the turbine current status",
   "suggestions": [
     "Actionable suggestion 1",
     "Actionable suggestion 2",
     "Actionable suggestion 3",
     "Actionable suggestion 4"
   ],
-  "risk_level": "low" | "medium" | "high"
+  "risk_level": "low"
 }}
 
+Risk level must be exactly one of: "low", "medium", or "high".
 Base risk on: TEY below benchmark = medium/high risk; CO or NOX above threshold = high risk.
-Keep each suggestion specific, technical, and actionable (mention exact parameter adjustments where possible).
+Keep each suggestion specific, technical, and actionable.
 """
+
+
+def _rule_based_fallback(inputs: ProcessInput, predictions: PredictionResult) -> GeminiSuggestion:
+    """Rule-based suggestions when Gemini is unavailable."""
+    risk = "low"
+    if predictions.TEY < 120 or predictions.CO > 5.0 or predictions.NOX > 90:
+        risk = "high"
+    elif predictions.TEY < 140 or predictions.CO > 2.0 or predictions.NOX > 65:
+        risk = "medium"
+
+    return GeminiSuggestion(
+        summary=f"TEY at {predictions.TEY:.1f} MWH, CO at {predictions.CO:.3f} mg/m³, NOX at {predictions.NOX:.1f} mg/m³.",
+        suggestions=[
+            f"TIT is {inputs.TIT}°C — increasing toward 1095°C may improve energy yield.",
+            f"CO at {predictions.CO:.3f} mg/m³ — monitor combustion mixture ratio and fuel quality.",
+            f"NOX at {predictions.NOX:.1f} mg/m³ — consider water or steam injection to reduce emissions.",
+            f"AFDP at {inputs.AFDP} mbar — schedule air filter inspection if above 4.5 mbar.",
+        ],
+        risk_level=risk,
+    )
 
 
 @router.post("/optimize", response_model=GeminiSuggestion)
 async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
-   
+    """
+    Call Gemini 1.5 Flash via direct REST API for turbine optimization suggestions.
+    Falls back to rule-based suggestions if Gemini is unavailable.
+    """
     if not GEMINI_API_KEY:
-        # Return a fallback if no API key
-        return GeminiSuggestion(
-            summary="Gemini API key not configured. Using rule-based fallback.",
-            suggestions=[
-                f"TIT is {inputs.TIT}°C — increasing toward 1095°C may improve TEY.",
-                f"CO at {predictions.CO:.3f} mg/m³ — monitor combustion mixture ratio.",
-                f"NOX at {predictions.NOX:.2f} mg/m³ — consider water/steam injection.",
-                f"Ensure air filter maintenance — AFDP of {inputs.AFDP} mbar indicates filter state.",
-            ],
-            risk_level="medium" if predictions.TEY < 140 or predictions.CO > 2.0 or predictions.NOX > 65 else "low",
-        )
+        return _rule_based_fallback(inputs, predictions)
+
+    prompt = _build_prompt(inputs, predictions)
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 512,
+        },
+    }
 
     try:
-        model = genai.GenerativeModel("gemini-pro")
-        prompt = _build_prompt(inputs, predictions)
-        response = model.generate_content(prompt)
+        response = http_requests.post(
+            GEMINI_URL.format(key=GEMINI_API_KEY),
+            json=payload,
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
 
-        # Parse JSON from Gemini response
-        raw = response.text.strip()
+        raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+
         # Strip markdown code blocks if present
-        if raw.startswith("```"):
+        if "```" in raw:
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        data = json.loads(raw.strip())
+        raw = raw.strip()
 
+        parsed = json.loads(raw)
         return GeminiSuggestion(
-            summary=data.get("summary", "Optimization analysis complete."),
-            suggestions=data.get("suggestions", []),
-            risk_level=data.get("risk_level", "medium"),
+            summary=parsed.get("summary", "Optimization analysis complete."),
+            suggestions=parsed.get("suggestions", []),
+            risk_level=parsed.get("risk_level", "medium"),
         )
 
-    except json.JSONDecodeError as e:
-        # Return error visibly in UI instead of swallowing it
-        return GeminiSuggestion(
-            summary=f"JSON parse error: {str(e)}",
-            suggestions=["Gemini returned an unexpected response format. Please retry."],
-            risk_level="medium",
-        )
+    except json.JSONDecodeError:
+        return _rule_based_fallback(inputs, predictions)
     except Exception as e:
-        # Return actual error visibly so we can debug it in the UI
         return GeminiSuggestion(
             summary=f"Gemini error: {str(e)}",
-            suggestions=["Check Render logs for full error details."],
+            suggestions=["Check API key and try again."],
             risk_level="medium",
         )

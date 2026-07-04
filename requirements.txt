@@ -1,7 +1,7 @@
 fastapi
 uvicorn[standard]
 python-multipart
-google-generativeai==0.8.6
+
 streamlit
 requests
 numpy

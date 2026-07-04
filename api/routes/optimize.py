@@ -109,7 +109,15 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
             json=payload,
             timeout=30,
         )
-        response.raise_for_status()
+
+        # Check status manually so we can see the actual error body
+        if not response.ok:
+            return GeminiSuggestion(
+                summary=f"Gemini API error {response.status_code}: {response.text[:300]}",
+                suggestions=["Check GEMINI_API_KEY in Render environment variables."],
+                risk_level="medium",
+            )
+
         data = response.json()
 
         raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()

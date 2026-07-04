@@ -1,13 +1,12 @@
 fastapi
 uvicorn[standard]
-jinja2
 python-multipart
-google-generativeai
+google-generativeai==0.8.6
 streamlit
 requests
 numpy
 pandas
 scikit-learn
-xgboost
+xgboost==3.2.0
 joblib
 python-dotenv

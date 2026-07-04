@@ -75,7 +75,7 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
         )
 
     try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash")
         prompt = _build_prompt(inputs, predictions)
         response = model.generate_content(prompt)
 
@@ -95,6 +95,16 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
         )
 
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=502, detail=f"Gemini returned malformed JSON: {str(e)}")
+        # Return error visibly in UI instead of swallowing it
+        return GeminiSuggestion(
+            summary=f"JSON parse error: {str(e)}",
+            suggestions=["Gemini returned an unexpected response format. Please retry."],
+            risk_level="medium",
+        )
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Gemini API error: {str(e)}")
+        # Return actual error visibly so we can debug it in the UI
+        return GeminiSuggestion(
+            summary=f"Gemini error: {str(e)}",
+            suggestions=["Check Render logs for full error details."],
+            risk_level="medium",
+        )

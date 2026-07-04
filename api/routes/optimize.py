@@ -75,7 +75,7 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
         )
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-pro")
         prompt = _build_prompt(inputs, predictions)
         response = model.generate_content(prompt)
 

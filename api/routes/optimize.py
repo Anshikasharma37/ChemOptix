@@ -69,13 +69,13 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
                 f"TIT is {inputs.TIT}°C — increasing toward 1095°C may improve TEY.",
                 f"CO at {predictions.CO:.3f} mg/m³ — monitor combustion mixture ratio.",
                 f"NOX at {predictions.NOX:.2f} mg/m³ — consider water/steam injection.",
-                "Ensure air filter maintenance — AFDP of {inputs.AFDP} mbar indicates filter state.",
+                f"Ensure air filter maintenance — AFDP of {inputs.AFDP} mbar indicates filter state.",
             ],
             risk_level="medium" if predictions.TEY < 140 or predictions.CO > 2.0 or predictions.NOX > 65 else "low",
         )
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.0-flash")
         prompt = _build_prompt(inputs, predictions)
         response = model.generate_content(prompt)
 
@@ -94,7 +94,7 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
             risk_level=data.get("risk_level", "medium"),
         )
 
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=502, detail="Gemini returned malformed JSON. Please retry.")
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=502, detail=f"Gemini returned malformed JSON: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Gemini API error: {str(e)}")

@@ -1,8 +1,4 @@
-"""
-ChemOptix — Model Training Script
-Trains the XGBoost MultiOutputRegressor pipeline on Gas Turbine data.
-Saves the trained pipeline to models/chemoptix_model.pkl
-"""
+
 
 import os
 import sys
@@ -22,7 +18,7 @@ MODEL_PATH = os.path.join(MODELS_DIR, "chemoptix_model.pkl")
 
 
 def train():
-    """Train the pipeline and save to disk."""
+   
     print("=" * 60)
     print("ChemOptix — Training Pipeline")
     print("=" * 60)
@@ -33,16 +29,15 @@ def train():
     print("\nBuilding pipeline...")
     pipeline = build_pipeline()
 
-    print("Training model (this may take ~30–60 seconds)...")
+    print("Training model...")
     pipeline.fit(X_train, y_train)
     print("Training complete!")
 
-    # Evaluate
     y_pred = pipeline.predict(X_test)
     y_pred_df = pd.DataFrame(y_pred, columns=TARGET_COLUMNS)
     y_test_reset = y_test.reset_index(drop=True)
 
-    print("\n" + "=" * 60)
+    
     print("TEST SET METRICS")
     print("=" * 60)
     for col in TARGET_COLUMNS:
@@ -50,10 +45,10 @@ def train():
         r2 = r2_score(y_test_reset[col], y_pred_df[col])
         print(f"  {col:5s}  →  MAE: {mae:.4f}  |  R²: {r2:.4f}")
 
-    # Save model
+    # Saving model
     os.makedirs(MODELS_DIR, exist_ok=True)
     joblib.dump(pipeline, MODEL_PATH)
-    print(f"\nModel saved → {MODEL_PATH}")
+    print(f"\nModel saved -> {MODEL_PATH}")
     return pipeline
 
 

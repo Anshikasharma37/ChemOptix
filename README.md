@@ -110,6 +110,7 @@ ChemOptix/
 
 ---
 
-## 👨‍💻 Author & License
+## 👩‍💻 Author & License
 
-Developed as an AI-powered industrial IoT engineering project. Distributed under the MIT License.
+Developed by **Anshika Sharma** as an AI-powered industrial optimization project. Distributed under the MIT License.
+

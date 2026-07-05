@@ -530,13 +530,22 @@ with tab2:
                 if val <= 90:   return "color: #ffb547"
                 return "color: #ff5252"
 
-            styled = (
-                df_results.style
-                .applymap(color_tey,  subset=["TEY (MWH)"])
-                .applymap(color_co,   subset=["CO (mg/m³)"])
-                .applymap(color_nox,  subset=["NOX (mg/m³)"])
-                .format({"TEY (MWH)": "{:.2f}", "CO (mg/m³)": "{:.4f}", "NOX (mg/m³)": "{:.2f}"})
-            )
+            try:
+                styled = (
+                    df_results.style
+                    .map(color_tey,  subset=["TEY (MWH)"])
+                    .map(color_co,   subset=["CO (mg/m³)"])
+                    .map(color_nox,  subset=["NOX (mg/m³)"])
+                    .format({"TEY (MWH)": "{:.2f}", "CO (mg/m³)": "{:.4f}", "NOX (mg/m³)": "{:.2f}"})
+                )
+            except AttributeError:
+                styled = (
+                    df_results.style
+                    .applymap(color_tey,  subset=["TEY (MWH)"])
+                    .applymap(color_co,   subset=["CO (mg/m³)"])
+                    .applymap(color_nox,  subset=["NOX (mg/m³)"])
+                    .format({"TEY (MWH)": "{:.2f}", "CO (mg/m³)": "{:.4f}", "NOX (mg/m³)": "{:.2f}"})
+                )
             st.dataframe(styled, use_container_width=True, hide_index=True)
 
             # Download results

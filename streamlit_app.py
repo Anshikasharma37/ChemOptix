@@ -161,8 +161,24 @@ st.markdown("""
     color: #00d2c8; margin: 0.5rem 0;
     white-space: pre;
 }
+
+/* Fix Streamlit file uploader button icon ligature text overlap */
+[data-testid="stFileUploadDropzone"] button [data-testid="stIconMaterial"],
+[data-testid="stFileUploader"] button [data-testid="stIconMaterial"],
+[data-testid="stFileUploadDropzone"] button span:first-child:not(:last-child),
+[data-testid="stFileUploader"] button span:first-child:not(:last-child) {
+    display: none !important;
+}
+[data-testid="stFileUploadDropzone"] button,
+[data-testid="stFileUploader"] button {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    padding: 0.4rem 1.2rem !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 # ── Hero banner ────────────────────────────────────────────────────────────────

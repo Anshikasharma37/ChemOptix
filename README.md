@@ -1,6 +1,6 @@
 # ChemOptix — AI-Powered Gas Turbine Optimization Platform
 
-[![Live Demo - Render UI](https://img.shields.io/badge/🚀_Live_Demo-Render_UI-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://chemoptix-ui.onrender.com)
+[![Live Demo - Render UI](https://img.shields.io/badge/🚀_Live_Demo-Render_UI-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://chemoptix.onrender.com)
 [![API Docs - FastAPI](https://img.shields.io/badge/⚡_API_Docs-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://chemoptix-api.onrender.com/docs)
 
 ---

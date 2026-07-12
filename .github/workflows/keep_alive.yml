@@ -1,0 +1,21 @@
+name: Keep Render App Awake (Cron Ping)
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent Render free-tier from sleeping (15 min timeout)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping ChemOptix Streamlit UI & FastAPI Backend
+        run: |
+          echo "Pinging ChemOptix Frontend UI..."
+          curl -s --max-time 30 https://chemoptix.onrender.com > /dev/null || echo "UI ping completed"
+
+          echo "Pinging ChemOptix API Health Check..."
+          curl -s --max-time 30 https://chemoptix-api.onrender.com/health > /dev/null || echo "API ping completed"
+
+          echo "All keep-alive pings finished successfully!"

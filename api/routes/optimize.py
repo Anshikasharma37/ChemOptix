@@ -1,14 +1,17 @@
 """
 ChemOptix — Gemini Optimization Route
-Calls Gemini 1.5 Flash directly via REST API (no SDK version issues).
+Calls Gemini directly via REST API (no SDK version issues).
 POST /api/optimize — returns structured suggestions for turbine parameters.
 """
 
 import os
 import json
+import logging
 import requests as http_requests
 from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv
+
+logger = logging.getLogger("chemoptix.optimize")
 
 from api.schemas import ProcessInput, PredictionResult, GeminiSuggestion
 
@@ -19,7 +22,7 @@ router = APIRouter(prefix="/api", tags=["Optimization"])
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-1.5-flash:generateContent?key={key}"
+    "gemini-2.5-flash:generateContent?key={key}"
 )
 
 
@@ -88,7 +91,7 @@ def _rule_based_fallback(inputs: ProcessInput, predictions: PredictionResult) ->
 @router.post("/optimize", response_model=GeminiSuggestion)
 async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
     """
-    Call Gemini 1.5 Flash via direct REST API for turbine optimization suggestions.
+    Call Gemini via direct REST API for turbine optimization suggestions.
     Falls back to rule-based suggestions if Gemini is unavailable.
     """
     if not GEMINI_API_KEY:
@@ -112,13 +115,16 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
 
         # If Gemini API returns an error status (e.g. 404, 403, 429), gracefully use rule-based fallback
         if not response.ok:
+            logger.error(
+                "Gemini API returned %s: %s", response.status_code, response.text[:500]
+            )
             return _rule_based_fallback(inputs, predictions)
 
         data = response.json()
 
         raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
-        # Strip markdown code blocks if present
+        
         if "```" in raw:
             raw = raw.split("```")[1]
             if raw.startswith("json"):
@@ -132,6 +138,7 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
             risk_level=parsed.get("risk_level", "medium"),
         )
 
-    except Exception:
+    except Exception as e:
         # Gracefully fall back to rule-based suggestions on any network, parsing, or API failure
+        logger.error("Gemini optimization failed, using fallback: %s", e)
         return _rule_based_fallback(inputs, predictions)

@@ -7,7 +7,7 @@ POST /api/optimize — returns structured suggestions for turbine parameters.
 import os
 import json
 import logging
-import requests as http_requests
+from groq import Groq
 from fastapi import APIRouter, HTTPException
 from dotenv import load_dotenv
 
@@ -19,11 +19,8 @@ load_dotenv()
 
 router = APIRouter(prefix="/api", tags=["Optimization"])
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.5-flash:generateContent"
-)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 
 def _build_prompt(inputs: ProcessInput, predictions: PredictionResult) -> str:
@@ -94,7 +91,7 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
     Call Gemini via direct REST API for turbine optimization suggestions.
     Falls back to rule-based suggestions if Gemini is unavailable.
     """
-    if not GEMINI_API_KEY:
+    if not GROQ_API_KEY:
         return _rule_based_fallback(inputs, predictions)
 
     prompt = _build_prompt(inputs, predictions)
@@ -107,26 +104,14 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
     }
 
     try:
-        response = http_requests.post(
-        GEMINI_URL,
-        headers={
-        "x-goog-api-key": GEMINI_API_KEY,
-        "Content-Type": "application/json",
-     },
-        json=payload,
-        timeout=30,
+        response = _client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=512,
         )
 
-        # If Gemini API returns an error status (e.g. 404, 403, 429), gracefully use rule-based fallback
-        if not response.ok:
-            logger.error(
-                "Gemini API returned %s: %s", response.status_code, response.text[:500]
-            )
-            return _rule_based_fallback(inputs, predictions)
-
-        data = response.json()
-
-        raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        raw = response.choices[0].message.content.strip()
 
         
         if "```" in raw:
@@ -144,5 +129,5 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
 
     except Exception as e:
         # Gracefully fall back to rule-based suggestions on any network, parsing, or API failure
-        logger.error("Gemini optimization failed, using fallback: %s", e)
+        logger.error("Groq optimization failed, using fallback: %s", e)
         return _rule_based_fallback(inputs, predictions)

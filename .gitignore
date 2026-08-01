@@ -1,4 +1,40 @@
-venv/
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environments
+venv/
+.venv/
+env/
+
+# Secrets
 .env
+
+# Models (trained artifacts — large binary files)
+
+models/*.joblib
+
+# Processed data
+data/processed/
+
+# Raw data (too large for git — add manually or use DVC)
+data/raw/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Build
+dist/
+build/
+*.egg-info/

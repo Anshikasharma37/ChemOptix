@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api", tags=["Optimization"])
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.5-flash:generateContent?key={key}"
+    "gemini-2.5-flash:generateContent"
 )
 
 
@@ -108,9 +108,13 @@ async def get_optimization(inputs: ProcessInput, predictions: PredictionResult):
 
     try:
         response = http_requests.post(
-            GEMINI_URL.format(key=GEMINI_API_KEY),
-            json=payload,
-            timeout=30,
+        GEMINI_URL,
+        headers={
+        "x-goog-api-key": GEMINI_API_KEY,
+        "Content-Type": "application/json",
+     },
+        json=payload,
+        timeout=30,
         )
 
         # If Gemini API returns an error status (e.g. 404, 403, 429), gracefully use rule-based fallback

@@ -16,6 +16,26 @@ load_dotenv()
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+def _wake_backend():
+    """Pings the backend on app load so it wakes up in parallel with the frontend,
+    instead of waiting for the user's first Predict click to trigger the cold start."""
+    if "backend_awake" not in st.session_state:
+        st.session_state.backend_awake = False
+
+    if not st.session_state.backend_awake:
+        with st.spinner("Waking up backend... this can take up to 50 seconds on first load."):
+            for _ in range(10):  # retry for ~50s (Render free tier cold start window)
+                try:
+                    r = requests.get(f"{API_URL}/health", timeout=10)
+                    if r.status_code == 200:
+                        st.session_state.backend_awake = True
+                        break
+                except requests.exceptions.RequestException:
+                    pass
+                time.sleep(5)
+
+_wake_backend()
+
 # ── Page config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="ChemOptix — Gas Turbine AI",

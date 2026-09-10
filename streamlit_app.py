@@ -10,6 +10,7 @@ import json
 import requests
 import pandas as pd
 import streamlit as st
+import time
 from dotenv import load_dotenv
 
 load_dotenv()

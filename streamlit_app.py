@@ -259,7 +259,6 @@ with tab1:
         st.markdown('<div class="section-head" style="margin-top:1.25rem;">💨 Flow & Pressure</div>', unsafe_allow_html=True)
         AFDP = st.number_input("Air Filter Diff. Pressure (mbar)", value=3.93,  min_value=2.0,   max_value=8.0,    step=0.001, format="%.3f", help="Filter blockage indicator")
         GTEP = st.number_input("Gas Turbine Exhaust Pressure (mbar)", value=25.56, min_value=15.0, max_value=45.0, step=0.001, format="%.3f", help="Pressure at turbine exhaust")
-        year = st.selectbox("Measurement Year", options=[2011,2012,2013,2014,2015], index=4)
 
         st.markdown("<br>", unsafe_allow_html=True)
         predict_btn = st.button("🔮 Predict & Optimize", type="primary", use_container_width=True, disabled=not api_ok, key="single_predict")
@@ -283,7 +282,8 @@ with tab1:
             </div>""", unsafe_allow_html=True)
 
         if predict_btn:
-            payload = dict(AT=AT, AP=AP, AH=AH, AFDP=AFDP, GTEP=GTEP, TIT=TIT, TAT=TAT, CDP=CDP, year=year)
+            payload = dict(AT=AT, AP=AP, AH=AH, AFDP=AFDP, GTEP=GTEP, TIT=TIT, TAT=TAT, CDP=CDP, year=2015)
+
             with st.spinner("Running XGBoost + Gemini AI…"):
                 try:
                     res = requests.post(f"{API_URL}/api/predict", json=payload, timeout=30)

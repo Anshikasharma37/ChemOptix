@@ -16,6 +16,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+st.set_page_config(
+    page_title="ChemOptix — Gas Turbine AI",
+    page_icon="⚗",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
 
 def _wake_backend():
     """Pings the backend on app load so it wakes up in parallel with the frontend,
@@ -37,13 +43,6 @@ def _wake_backend():
 
 _wake_backend()
 
-# ── Page config ────────────────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="ChemOptix — Gas Turbine AI",
-    page_icon="⚗",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
 st.markdown("""

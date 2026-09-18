@@ -60,7 +60,11 @@ Respond ONLY with valid JSON in this exact format:
 }}
 
 Risk level must be exactly one of: "low", "medium", or "high".
-Base risk on: TEY below benchmark = medium/high risk; CO or NOX above threshold = high risk.
+Base risk strictly on these tiers:
+- "low": TEY >= 140 MWH AND CO <= 2.0 mg/m³ AND NOX <= 65 mg/m³
+- "medium": TEY between 120-140 MWH, OR CO between 2.0-5.0 mg/m³, OR NOX between 65-90 mg/m³
+- "high": TEY < 120 MWH, OR CO > 5.0 mg/m³, OR NOX > 90 mg/m³
+Only use "high" if a value crosses the high threshold above — do not default to "high" just because a value is somewhat above the acceptable benchmark.
 Keep each suggestion specific, technical, and actionable.
 """
 
